@@ -6,9 +6,8 @@ import pprint
 
 from pkg_resources import EntryPoint, iter_entry_points, resource_string
 
-import tw
-from tw.api import Widget, WidgetType
-from tw.core import view
+import tw2.core as twc
+import tw2.core.core
 
 log = logging.getLogger(__name__)
 
@@ -17,10 +16,10 @@ def import_widget(path):
 
     Can import both widget instances or classes.
 
-       >>> import_widget('tw.core.base.Widget')
-       <class 'tw.core.base.Widget'>
-       >>> import_widget('tw.core.base:Widget')
-       <class 'tw.core.base.Widget'>
+       >>> import_widget('tw2.core.Widget')
+       <class 'tw2.core.Widget'>
+       >>> import_widget('tw2.core:Widget')
+       <class 'tw2.core.Widget'>
        >>> import_widget('os.popen')
 
     """
@@ -28,7 +27,7 @@ def import_widget(path):
         parts = path.split('.')
         path = '.'.join(parts[:-1]) + ':' + parts[-1]
     widget = EntryPoint.parse("x="+path).load(False)
-    if not isinstance(widget, (WidgetType, Widget)):
+    if not isinstance(widget, (twc.WidgetMeta, twc.Widget)):
         widget = None
     return widget
 
@@ -36,15 +35,15 @@ def import_widget(path):
 def widget_path(widget):
     """Returns the path of a widget instance or subclass
 
-    >>> from tw.api import Widget
+    >>> from tw2.core import Widget
     >>> widget_path(Widget)
-    'tw.core.base.Widget'
+    'tw2.core.Widget'
     >>> widget_path(Widget())
-    'tw.core.base.Widget'
+    'tw2.core.Widget'
     """
-    if not isinstance(widget, (WidgetType, Widget)):
+    if not isinstance(widget, (twc.WidgetMeta, twc.Widget)):
         raise TypeError("Only widgets are allowed")
-    if isinstance(widget, Widget):
+    if isinstance(widget, twc.Widget):
         widget = widget.__class__
     return '.'.join([widget.__module__, widget.__name__])
 
@@ -84,7 +83,7 @@ def widget_template(widget, extension='.html'):
     'Dummy template $value mako version\\n'
     """
     template = widget.template
-    if template and not view._is_inline_template(template):
+    if template:
         # Template seems to refer to a file, look it up
         parts = template.split('.')
         possible_extensions = set(".html .mak .mako".split())
@@ -111,7 +110,7 @@ def display_widget(widget, argstr='', ctx=None):
 
     Example::
 
-        >>> from tw.api import Widget
+        >>> from tw2.core import Widget, Param
         >>> class TestWidget(Widget):
         ...     params = ['param']
         ...     template = "$value-$param"
@@ -130,25 +129,25 @@ def widget_url(widget, action='', prefix=None):
     """Returns the URL of the controller to perform `action` on `widget`.
 
     If no `prefix` is passed the it will be tried to be fetched from
-    `tw.framework.request_local` where the :class:`WidgetBrowser` leaves it
+    `tw2.core.request_local` where the :class:`WidgetBrowser` leaves it
     on every request.
 
     Example::
 
-        >>> from tw.core.base import Widget
-        >>> widget_url(Widget)
-        '/tw.core.base.Widget/'
-        >>> widget_url(Widget())
-        '/tw.core.base.Widget/'
+        >>> import tw2.core as twc
+        >>> widget_url(twc.Widget)
+        '/tw2.core.Widget/'
+        >>> widget_url(twc.Widget())
+        '/tw2.core.Widget/'
 
     You can also pass the `path` of the widget::
 
-        >>> widget_url('tw.api.Widget')
-        '/tw.api.Widget/'
-        >>> widget_url('tw.api.Widget', 'show')
-        '/tw.api.Widget/show'
-        >>> widget_url('tw.api.Widget', 'show', prefix='/widget')
-        '/widget/tw.api.Widget/show'
+        >>> widget_url('tw2.core.Widget')
+        '/tw2.core.Widget/'
+        >>> widget_url('tw2.core.Widget', 'show')
+        '/tw2.core.Widget/show'
+        >>> widget_url('tw2.core.Widget', 'show', prefix='/widget')
+        '/widget/tw2.core.Widget/show'
 
     .. note::
 
@@ -156,14 +155,14 @@ def widget_url(widget, action='', prefix=None):
         string but if you pass a widget instance or subclass then the real
         module where it is defined will be generated.
     """
-    if isinstance(widget, (Widget, WidgetType)):
+    if isinstance(widget, (twc.Widget, twc.WidgetMeta)):
         widgeturi = widget_path(widget)
     else:
         widgeturi = widget
         if import_widget(widgeturi) is None:
             return
     if prefix is None:
-        prefix = getattr(tw.framework.request_local, 'browser_prefix', '')
+        prefix = getattr(tw2.core.core.request_local, 'browser_prefix', '')
     return '/'.join([prefix.rstrip('/'), widgeturi, action])
 
 def all_widgets():
@@ -174,7 +173,7 @@ def all_widgets():
     True
     """
     seen = set()
-    for ep in iter_entry_points('toscawidgets.widgets'):
+    for ep in iter_entry_points('tw2.widgets'):
         try:
             mod = ep.load(False)
         except ImportError, e:
@@ -182,7 +181,7 @@ def all_widgets():
             continue
         for name in dir(mod):
             obj = getattr(mod, name)
-            if isinstance(obj, WidgetType) and obj not in seen:
+            if isinstance(obj, twc.WidgetMeta) and obj not in seen:
                 seen.add(obj)
                 yield obj
 
@@ -191,7 +190,7 @@ class WidgetParameters(object):
 
     Example::
 
-        >>> from tw.core.base import Widget
+        >>> from tw2.core import Widget
         >>> params = WidgetParameters(Widget)
         >>> len(params.all) > 0
         True
@@ -215,7 +214,7 @@ class WidgetParameters(object):
 
         Example::
 
-            >>> from tw.core.base import Widget
+            >>> from tw2.core import Widget
             >>> params = WidgetParameters(Widget)
             >>> type(params.get_default('id'))
             <type 'str'>
@@ -228,7 +227,7 @@ class WidgetParameters(object):
 
         Example::
 
-            >>> from tw.core.base import Widget
+            >>> from tw2.core import Widget
             >>> params = WidgetParameters(Widget)
             >>> type(params.get_doc('id'))
             <type 'str'>

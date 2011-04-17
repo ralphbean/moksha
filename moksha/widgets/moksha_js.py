@@ -13,13 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tw.api import JSLink
-from tw.jquery import jquery_js
+from tw2.core import JSLink
 
 moksha_js = JSLink(modname=__name__,
-        filename='static/moksha.js',
-        javascript=[jquery_js])
+        filename='static/moksha.js',)
 
 moksha_extension_points_js = JSLink(modname="moksha",
-        filename='public/javascript/moksha.extensions.js',
-        javascript=[moksha_js])
+        filename='public/javascript/moksha.extensions.js')

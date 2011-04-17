@@ -20,18 +20,5 @@
 .. moduleauthor:: Luke Macken <lmacken@redhat.com>
 """
 
-from tw.api import Widget
-
-class IFrameWidget(Widget):
-    params = ['id', 'url', 'title', 'height', 'width']
-    template = """
-      <h1>${title}</h1>
-      <iframe id="${id}" src="${url}" width="${width}" height="${height}">
-        <p>Your browser does not support iframes.</p>
-      </iframe>
-    """
-    title = ''
-    height = width = '100%'
-    engine_name = 'mako'
-
-iframe_widget = IFrameWidget('iframe_widget')
+from tw2.etc import IFrameWidget
+iframe_widget = IFrameWidget(id='iframe_widget')

@@ -19,16 +19,16 @@ import moksha
 import moksha.utils
 
 from tg import config
-from tw.api import Widget, JSLink, js_callback, js_function
+import tw2.core as twc
+from tw2.jquery import jquery_js
 from paste.deploy.converters import asbool
 
 from moksha.api.widgets.orbited import orbited_host, orbited_port, orbited_url
-from moksha.api.widgets.orbited import orbited_js
 from moksha.lib.helpers import defaultdict
 from moksha.widgets.notify import moksha_notify
 from moksha.widgets.json import jquery_json_js
 
-stomp_js = JSLink(link=orbited_url + '/static/protocols/stomp/stomp.js')
+stomp_js = twc.JSLink(link=orbited_url + '/static/protocols/stomp/stomp.js')
 
 def stomp_subscribe(topic):
     """ Return a javascript callback that subscribes to a given topic,
@@ -54,22 +54,22 @@ def stomp_unsubscribe(topic):
     return sub
 
 
-class StompWidget(Widget):
+class StompWidget(twc.Widget):
     callbacks = ['onopen', 'onerror', 'onerrorframe', 'onclose',
                  'onconnectedframe', 'onmessageframe']
-    javascript = [jquery_json_js]
-    params = callbacks[:] + ['topics', 'notify', 'orbited_host',
-            'orbited_port', 'orbited_url', 'orbited_js', 'stomp_host',
-            'stomp_port', 'stomp_user', 'stomp_pass']
-    onopen = js_callback('function(){}')
-    onerror = js_callback('function(error){}')
-    onclose = js_callback('function(c){}')
-    onerrorframe = js_callback('function(f){}')
-    onmessageframe = ''
-    onconnectedframe = ''
-
-    # Popup notification bubbles on socket state changes
-    notify = False
+    resources = [jquery_js, jquery_json_js]
+    onopen = twc.Param("onopen callback",
+                       default=twc.js_callback('function(){}'))
+    onerror = twc.Param("onerror callback",
+                        default=twc.js_callback('function(error){}'))
+    onclose = twc.Param("onclose callback",
+                        default=twc.js_callback('function(c){}'))
+    onerrorframe = twc.Param("onerrorframe callback",
+                             twc.js_callback('function(f){}'))
+    onmessageframe = twc.Param("onmessageframe callback",
+                               default='')
+    onconnectedframe = twc.Param("onconnectedframe callback",
+                                default='')
 
     engine_name = 'mako'
     template = u"""
@@ -162,46 +162,65 @@ class StompWidget(Widget):
         % endif
       </script>
     """
-    hidden = True
 
-    def __init__(self, *args, **kw):
-        self.notify = asbool(config.get('moksha.socket.notify', False))
-        self.orbited_host = config.get('orbited_host', 'localhost')
-        self.orbited_port = config.get('orbited_port', 9000)
-        self.orbited_scheme = config.get('orbited_scheme', 'http')
-        self.orbited_url = '%s://%s:%s' % (self.orbited_scheme,
-                self.orbited_host, self.orbited_port)
-        self.orbited_js = JSLink(link=self.orbited_url + '/static/Orbited.js')
-        self.stomp_host = config.get('stomp_host', 'localhost')
-        self.stomp_port = config.get('stomp_port', 61613)
-        self.stomp_user = config.get('stomp_user', 'guest')
-        self.stomp_pass = config.get('stomp_pass', 'guest')
-        super(StompWidget, self).__init__(*args, **kw)
+    # TODO -- what does this do?
+    hidden = twc.Param("Undocumented.  What does this do?",
+                       default=True)
 
-    def update_params(self, d):
-        super(StompWidget, self).update_params(d)
-        d.topics = []
-        d.onmessageframe = defaultdict(str) # {topic: 'js callbacks'}
+    notify = twc.Param(
+        "Popup notification bubbles on socket state changes",
+        default=asbool(config.get('moksha.socket.notify', False)))
+    orbited_host = twc.Param(
+        "orbited host",
+        default=config.get('orbited_host', 'localhost'))
+    orbited_port = twc.Param(
+        "orbited port",
+        default=config.get('orbited_port', 9000))
+    orbited_scheme = twc.Param(
+        "orbited scheme",
+        default=config.get('orbited_scheme', 'http'))
+    orbited_url = twc.Variable("orbited_url", default=None)
+    topics = twc.Variable("topics", default=[])
+
+    stomp_host = twc.Param(default=config.get('stomp_host', 'localhost'))
+    stomp_port = twc.Param(default=config.get('stomp_port', 61613))
+    stomp_user = twc.Param(default=config.get('stomp_user', 'guest'))
+    stomp_pass = twc.Param(default=config.get('stomp_pass', 'guest'))
+
+    def prepare(self):
+        if not self.orbited_url:
+            self.orbited_url = '%s://%s:%s' % (
+                self.orbited_scheme, self.orbited_host, self.orbited_port)
+        super(StompWidget, self).prepare()    
+        self.onmessageframe = defaultdict(str) # {topic: 'js callbacks'}
         for callback in self.callbacks:
             if len(moksha.utils.livewidgets[callback]):
                 cbs = ''
                 if callback == 'onmessageframe':
                     for topic in moksha.utils.livewidgets[callback]:
-                        d.topics.append(topic)
+                        self.topics.append(topic)
                         for cb in moksha.utils.livewidgets[callback][topic]:
-                            d.onmessageframe[topic] += '%s;' % str(cb)
+                            self.onmessageframe[topic] += '%s;' % str(cb)
                 else:
                     for cb in moksha.utils.livewidgets[callback]:
-                        if isinstance(cb, (js_callback, js_function)):
+                        if isinstance(cb, (twc.js_callback, js_function)):
                             cbs += '$(%s);' % str(cb)
                         else:
                             cbs += str(cb)
                 if cbs:
-                    d[callback] = cbs
+                    setattr(self, callback, cbs)
 
-        if d.notify:
+        if self.notify:
             moksha_notify.register_resources()
-            d.onopen = js_callback('function() { $.jGrowl("Moksha live socket connected") }')
-            d.onerror = js_callback('function(error) { $.jGrowl("Moksha Live Socket Error: " + error) }')
-            d.onerrorframe = js_callback('function(f) { $.jGrowl("Error frame received from Moksha Socket: " + f) }')
-            d.onclose = js_callback('function(c) { $.jGrowl("Moksha Socket Closed") }')
+            openmsg = "Moksha live socket connected"
+            self.onopen = twc.js_callback(
+                'function() { $.jGrowl("%s") }' % openmsg)
+            errormsg = "Moksha Live Socket Error: "
+            self.onerror = twc.js_callback(
+                'function(error) { $.jGrowl("%s" + error) }' % errormsg)
+            errorframemsg = "Error frame received from Moksha Socket: "
+            self.onerrorframe = twc.js_callback(
+                'function(f) { $.jGrowl("%s" + f) }' % errorframemsg)
+            closemsg = "Moksha Socket Closed"
+            self.onclose = twc.js_callback(
+                'function(c) { $.jGrowl("%s") }' % closemsg)

@@ -36,8 +36,7 @@ options(
             ),
             'moksha.global': (
                 'moksha_socket = moksha.api.widgets:moksha_socket',
-                'jquery_ui_draggable = tw.jquery.ui:ui_draggable_js',
-                'jquery_ui_resizable = tw.jquery.ui:ui_resizable_js',
+                'jquery_ui_js = tw2.jqplugins.ui.base:jquery_ui_js',
             ),
         }
     ),

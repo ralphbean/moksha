@@ -16,21 +16,21 @@
 # Authors: Luke Macken <lmacken@redhat.com>
 
 from tg import config
-from tw.api import Widget, JSLink, js_callback
+import tw2.core as twc
 
 orbited_host = config.get('orbited_host', 'localhost')
 orbited_port = config.get('orbited_port', 9000)
 orbited_url = '%s://%s:%s' % (config.get('orbited_scheme', 'http'), orbited_host, orbited_port)
-orbited_js = JSLink(link=orbited_url + '/static/Orbited.js')
+orbited_js = twc.JSLink(link=orbited_url + '/static/Orbited.js')
 
-class OrbitedWidget(Widget):
-    params = {
-        'onopen': 'A javascript callback for when the connection opens',
-        'onread': 'A javascript callback for when new data is read',
-        'onclose': 'A javascript callback for when the connection closes',
-    }
-    onopen = onread = onclose = js_callback('function(){}')
-    javascript = [orbited_js]
+class OrbitedWidget(twc.Widget):
+    onopen = twc.Param("A javascript callback for when the connection opens",
+                       default=twc.js_callback('function(){}'))
+    onread = twc.Param("A javascript callback for when new data is read",
+                       default=twc.js_callback('function(){}'))
+    onclose = twc.Param("A javascript callback for when the connection closes",
+                       default=twc.js_callback('function(){}'))
+    resources = [orbited_js]
     template = """
         <script type="text/javascript">
             Orbited.settings.port = %(port)s

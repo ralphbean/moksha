@@ -27,7 +27,7 @@ from pylons import request
 from moksha.lib.base import BaseController
 from moksha.apps.chat import LiveChatFrameWidget
 
-chat_frame_widget = LiveChatFrameWidget('chat_frame')
+chat_frame_widget = LiveChatFrameWidget(id='chat_frame')
 
 
 class ChatController(BaseController):

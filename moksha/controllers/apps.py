@@ -28,7 +28,7 @@ from moksha.lib.helpers import Category, MokshaApp, MokshaWidget
 class AppWidgetContainer(DashboardContainer, ContextAwareWidget):
     template = "${applist_widget(category='main', layout=layout)}"
 
-appwidget_container = AppWidgetContainer('appwidget')
+appwidget_container = AppWidgetContainer(id='appwidget')
 
 class AppController(Controller):
 

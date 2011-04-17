@@ -170,7 +170,7 @@ class MokshaMiddleware(object):
                     }
 
     def load_widgets(self):
-        from moksha.api.widgets.live import LiveWidget, TW2LiveWidgetMeta
+        from moksha.api.widgets.live import LiveWidgetMeta
         import tw2.core.widgets
         log.info('Loading moksha widgets')
         for widget_entry in pkg_resources.iter_entry_points('moksha.widget'):
@@ -187,8 +187,7 @@ class MokshaMiddleware(object):
                     'name': getattr(widget_class, 'name', widget_entry.name),
                     'widget': widget,
                     'path': widget_path,
-                    'live': (isinstance(widget, LiveWidget) or
-                             isinstance(widget, TW2LiveWidgetMeta)),
+                    'live': isinstance(widget, LiveWidgetMeta),
                     }
 
     def load_menus(self):
@@ -197,7 +196,7 @@ class MokshaMiddleware(object):
             log.info('Loading %s menu' % menu_entry.name)
             menu_class = menu_entry.load()
             menu_path = menu_entry.dist.location
-            moksha.utils.menus[menu_entry.name] = menu_class(menu_entry.name)
+            moksha.utils.menus[menu_entry.name] = menu_class(id=menu_entry.name)
 
     def load_renderers(self):
         """ Load our template renderers with our application paths.

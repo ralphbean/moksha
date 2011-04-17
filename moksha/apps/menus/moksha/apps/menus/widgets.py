@@ -27,40 +27,38 @@ Bicocchi. © 2002-2008 Open Lab srl, Matteo Bicocchi. GPL licensed.
 .. moduleauthor:: Luke Macken <lmacken@redhat.com>
 """
 
-from tw.api import JSLink, Widget, CSSLink, js_symbol
-from tw.jquery import jquery_js, jQuery
+import tw2.core as twc
+from tw2.jquery import jquery_js
+from tw2.jquery.base import jQuery
 
 from moksha.lib.helpers import when_ready
 
 modname = __name__
 
-jquery_mbmenu_js = JSLink(modname=modname,
-                          filename='static/mbMenu.js',
-                          javascript=[jquery_js])
+jquery_mbmenu_js = twc.JSLink(modname=modname,
+                              filename='static/mbMenu.js')
+jquery_mbmenu_min_js = twc.JSLink(modname=modname,
+                                  filename='static/mbMenu.min.js')
 
-jquery_mbmenu_min_js = JSLink(modname=modname,
-                              filename='static/mbMenu.min.js',
-                              javascript=[jquery_js])
+mbmenu_css_1 = twc.CSSLink(modname=modname, filename='static/css/menu1.css',
+                           media='screen')
+mbmenu_css = twc.CSSLink(modname=modname, filename='static/css/menu.css',
+                         media='screen')
+mbmenu_resources = twc.DirLink(modname=modname, filename='static/images',
+                               media='screen')
 
-mbmenu_css_1 = CSSLink(modname=modname, filename='static/css/menu1.css',
-                       media='screen')
-mbmenu_css = CSSLink(modname=modname, filename='static/css/menu.css',
-                     media='screen')
-
-class MokshaMenuBase(Widget):
+# TODO -- this should be broken out into tw2.jqplugins.mbmenu
+class MokshaMenuBase(twc.Widget):
     template = "mako:moksha.apps.menus.templates.mbmenu"
-    javascript = [jquery_mbmenu_min_js]
-    css = [mbmenu_css_1]
-    params = ['callback', 'rootMenuSelector', 'menuSelector', 'id', 'menus',
-              'additionalData', 'iconPath', 'menuWidth', 'openOnRight',
-              'hasImages', 'fadeTime', 'adjustLeft', 'adjustTop', 'opacity',
-              'shadow', 'fadeInTime', 'fadeOutTime', 'overflow', 'effect',
-              'minZindex']
+    resources = [
+        jquery_js, jquery_mbmenu_min_js, mbmenu_css_1,
+        mbmenu_resources,
+    ]
 
     rootMenuSelector = 'rootVoices'
     menuSelector = 'menuContainer'
     callback = '/apps/menu'
-    iconPath = '/toscawidgets/resources/moksha.apps.menus.widgets/static/images/'
+    iconPath = '/resources/moksha.apps.menus.widgets/static/images/'
     additionalData = ""
     menus = []
     menuWidth = 200
@@ -79,69 +77,68 @@ class MokshaMenuBase(Widget):
 
 
 class MokshaMenu(MokshaMenuBase):
+    def prepare(self):
+        super(MokshaMenu, self).prepare()
 
-    def update_params(self, d):
-        super(MokshaMenu, self).update_params(d)
-
-        if not d.id:
+        if not self.id:
             raise Exception("MokshaMenu must have an id!")
-        if not d.callback:
+        if not self.callback:
             raise Exception("Must provide a callback URL!")
 
         menus = []
-        for menu in d.menus:
+        for menu in self.menus:
             menus.append((menu.lower().replace(' ', ''), menu))
-        d.menus = menus
+        self.menus = menus
 
-        self.add_call(when_ready(jQuery('.%s' % d.id).buildMenu({
-                'template': d.callback,
-                'additionalData': d.additionalData,
-                'menuWidth': d.menuWidth,
-                'openOnRight': d.openOnRight,
-                'rootMenuSelector': ".%s" % d.rootMenuSelector,
-                'menuSelector': ".%s" % d.menuSelector,
-                'iconPath': d.iconPath,
-                'hasImages': d.hasImages,
-                'fadeTime': d.fadeTime,
-                'fadeInTime': d.fadeInTime,
-                'fadeOutTime': d.fadeOutTime,
-                'adjustLeft': d.adjustLeft,
-                'adjustTop': d.adjustTop,
-                'opacity': d.opacity,
-                'shadow': d.shadow,
-                'minZindex': d.minZindex,
+        self.add_call(when_ready(jQuery('.%s' % self.id).buildMenu({
+                'template': self.callback,
+                'additionalData': self.additionalData,
+                'menuWidth': self.menuWidth,
+                'openOnRight': self.openOnRight,
+                'rootMenuSelector': ".%s" % self.rootMenuSelector,
+                'menuSelector': ".%s" % self.menuSelector,
+                'iconPath': self.iconPath,
+                'hasImages': self.hasImages,
+                'fadeTime': self.fadeTime,
+                'fadeInTime': self.fadeInTime,
+                'fadeOutTime': self.fadeOutTime,
+                'adjustLeft': self.adjustLeft,
+                'adjustTop': self.adjustTop,
+                'opacity': self.opacity,
+                'shadow': self.shadow,
+                'minZindex': self.minZindex,
                 })))
 
 
 class MokshaContextualMenu(MokshaMenuBase):
 
-    def update_params(self, d):
-        super(MokshaContextualMenu, self).update_params(d)
+    def prepare(self):
+        super(MokshaContextualMenu, self).prepare()
 
-        if not d.id:
+        if not self.id:
             raise Exception("MokshaMenu must have an id!")
-        if not d.callback:
+        if not self.callback:
             raise Exception("Must provide a callback URL!")
 
         menus = []
-        for menu in d.menus:
+        for menu in self.menus:
             menus.append((menu.lower().replace(' ', ''), menu))
-        d.menus = menus
+        self.menus = menus
 
-        self.add_call(jQuery(js_symbol('document')).buildContextualMenu({
-                'template': d.callback,
-                'menuWidth': d.menuWidth,
-                'rootMenuSelector': ".%s" % d.rootMenuSelector,
-                'menuSelector': ".%s" % d.menuSelector,
-                'iconPath': d.iconPath,
-                'hasImages': d.hasImages,
-                'fadeTime': d.fadeTime,
-                'fadeInTime': d.fadeInTime,
-                'fadeOutTime': d.fadeOutTime,
-                'adjustLeft': d.adjustLeft,
-                'adjustTop': d.adjustTop,
-                'opacity': d.opacity,
-                'shadow': d.shadow,
-                'effect': d.effect,
-                'minZindex': d.minZindex
+        self.add_call(jQuery(twc.JSSymbol(src='document')).buildContextualMenu({
+                'template': self.callback,
+                'menuWidth': self.menuWidth,
+                'rootMenuSelector': ".%s" % self.rootMenuSelector,
+                'menuSelector': ".%s" % self.menuSelector,
+                'iconPath': self.iconPath,
+                'hasImages': self.hasImages,
+                'fadeTime': self.fadeTime,
+                'fadeInTime': self.fadeInTime,
+                'fadeOutTime': self.fadeOutTime,
+                'adjustLeft': self.adjustLeft,
+                'adjustTop': self.adjustTop,
+                'opacity': self.opacity,
+                'shadow': self.shadow,
+                'effect': self.effect,
+                'minZindex': self.minZindex
                 }))

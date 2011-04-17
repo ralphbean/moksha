@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tw.api import Widget
+import tw2.core as twc
 
-class Placeholder(Widget):
+class Placeholder(twc.Widget):
     engine_name = 'mako'
-    hidden = True
+    hidden = twc.Param(default=True)
     template = """
 <p class='placeholder'>
     Moksha application <strong>${appname}</strong> is not registered yet.  This is a placeholder

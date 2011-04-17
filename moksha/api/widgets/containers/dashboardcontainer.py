@@ -13,59 +13,53 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tw.api import Widget
-from tw.jquery import jquery_js
+import tw2.core as twc
+from tw2.jquery import jquery_js
 from moksha.lib.helpers import eval_app_config, ConfigWrapper
 from tg import config
-from tw.api import Widget
 
 from moksha.lib.helpers import eval_app_config, ConfigWrapper
 
-class AppListWidget(Widget):
+class AppListWidget(twc.Widget):
     template = 'mako:moksha.api.widgets.containers.templates.layout_applist'
-    params = ['category']
+    category = twc.Param()
 
-    def update_params(self, d):
-        super(AppListWidget, self).update_params(d)
+    def prepare(self):
+        super(AppListWidget, self).prepare()
 
         # ignore categories that don't exist
-        c = d['category']
+        c = self.category
         if isinstance(c, basestring):
             found = False
-            for cat in d['layout']:
+            for cat in self.layout:
                 if cat['label'] == c:
-                    d['category'] = cat
+                    self.category = cat
                     found = True
                     break
 
             # ignore categories that don't exist
             if not found:
-                d['category'] = None
+                self.category = None
 
-applist_widget = AppListWidget('applist');
+applist_widget = AppListWidget(id='applist');
 
-class DashboardContainer(Widget):
+class DashboardContainer(twc.Widget):
     template = 'mako:moksha.api.widgets.containers.templates.dashboardcontainer'
-    params = ['layout', 'applist_widget']
-    css = []
-    javascript = []
-    config_key = None
-    layout = []
-    applist_widget = applist_widget
+    config_key = twc.Param(default=None)
+    layout = twc.Variable()
+    applist_widget = twc.Param(default=applist_widget)
     engine_name = 'mako'
 
-    def update_params(self, d):
-        super(DashboardContainer, self).update_params(d)
+    def prepare(self):
+        super(DashboardContainer, self).prepare()
         layout = eval_app_config(config.get(self.config_key, "None"))
 
         if not layout:
-            if isinstance(d.layout, basestring):
-                layout = eval_app_config(d.layout)
+            if isinstance(self.layout, basestring):
+                layout = eval_app_config(self.layout)
             else:
-                layout = d.layout
+                layout = self.layout
 
         # Filter out any None's in the layout which signify apps which are
         # not allowed to run with the current session's authorization level
-        d.layout = ConfigWrapper.process_wrappers(layout, d)
-
-        return d
+        self.layout = ConfigWrapper.process_wrappers(layout, d)

@@ -26,8 +26,7 @@ except ImportError:
     have_formencode = False
 
 from genshi.util import LRUCache
-import tw
-from tw.api import make_middleware, Widget
+import tw2.core as twc
 
 from moksha.widgetbrowser import util, widgets
 
@@ -188,7 +187,7 @@ class WidgetReplApp(object):
         # output.
         conf = {'toscawidgets.framework.default_view' : 'tw_repl',
                 'toscawidgets.middleware.inject_resources' : True}
-        repl_app.app = make_middleware(repl_app.app, conf)
+        repl_app.app = twc.make_middleware(repl_app.app, conf)
         # monkey-patch display and render to hijack output
         def wrap(f):
             if f.func_name == 'wrapper':
@@ -201,8 +200,8 @@ class WidgetReplApp(object):
                     o = f(self, value, **kw)
                 return o
             return wrapper
-        Widget.display = wrap(Widget.display)
-        Widget.render = wrap(Widget.render)
+        twc.Widget.display = wrap(twc.Widget.display)
+        twc.Widget.render = wrap(twc.Widget.render)
 
     def __call__(self, environ, start_response):
         assert not environ['wsgi.multiprocess'], "Cannot run in a multiprocess"\
@@ -230,7 +229,7 @@ class WidgetReplApp(object):
     def index(self, req, resp):
         """Return an HTTP-based Read-Eval-Print-Loop terminal."""
         # Override default_view so resources display properly
-        tw.framework.default_view = 'toscawidgets'
+        #tw.framework.default_view = 'toscawidgets'
         tpl = '<html><head><title>"%(title)s</title></head>' \
               '<body class="flora">%(repl)s</body></html>'
         prefix = req.script_name + '/'
@@ -299,7 +298,7 @@ class WidgetReplApp(object):
                 pass
         # Override default_view because WidgetBrowser renders on Genshi, not
         # 'tw_repl', this is needed so widget and resources display properly
-        tw.framework.default_view = 'genshi'
+        #tw.framework.default_view = 'genshi'
         widget_output = dd.display()
         return render('show_widget.html', self.enrich_namespace(locals(),request=req))
     widget_output.exposed = True

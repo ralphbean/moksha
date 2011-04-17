@@ -59,7 +59,7 @@ var loaded = function() {
         room = result[1]
         var opts = gatherOptions(room, container);
         ifr = document.createElement('iframe')
-        var staticurl = baseurl + '/toscawidgets/resources/moksha.apps.chat.chat/static'
+        var staticurl = baseurl + '/resources/moksha.apps.chat.chat/static'
         ifr.src = '/apps/chat/index?json=1&opts=' +  escape(JSON.stringify(opts))
         ifr.style.border = "0px";
         ifr.style.width = "100%";

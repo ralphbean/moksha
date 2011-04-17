@@ -25,44 +25,42 @@ returns the source code, in HTML.
 import moksha.utils
 import inspect
 
-from tw.api import Widget
+import tw2.core as twc
 from twisted.python.reflect import namedAny
 from pygments import highlight
 from pygments.lexers import PythonLexer
 from pygments.formatters import HtmlFormatter
 
-class SourceCodeWidget(Widget):
-    params = {
-        'widget': 'The name of the widget',
-        'module': 'Whether to display the entire module',
-        'source': 'Optional source code',
-        'code': 'The actual rendered source code',
-        'title': ' An optional title for the document',
-    }
-    template = "${code}"
-    engine_name = 'mako'
+class SourceCodeWidget(twc.Widget):
+    widget = twc.Param('The name of the widget')
+    module = twc.Param('Whether to display the entire module', default=False)
+    source = twc.Param('Optional source code', default=None)
+    title = twc.Variable(' An optional title for the document')
+    code = twc.Variable('The actual rendered source code')
+    
+    template = "mako:moksha.widgets.templates.sourcecode"
     container_options = {'width': 625, 'height': 675, 'title': 'View Source',
                          'icon': 'comment.png', 'top': 50, 'left': 300}
-    hidden = True
-    module = False
-    title = None
+    hidden = twc.Param(default=True)
+    module = twc.Param(default=False)
+    title = twc.Param(default=None)
 
-    def update_params(self, d):
-        super(SourceCodeWidget, self).update_params(d)
-        title = d.widget.__class__.__name__
-        if not d.source:
+    def prepare(self):
+        super(SourceCodeWidget, self).prepare()
+        title = self.widget.__class__.__name__
+        if not self.source:
             try:
-                d.widget = moksha.utils.get_widget(d.widget)
+                self.widget = moksha.utils.get_widget(self.widget)
             except Exception, e:
-                d.widget = namedAny(d.widget)
-            if d.module:
-                obj = namedAny(d.widget.__module__)
+                self.widget = namedAny(self.widget)
+            if self.module:
+                obj = namedAny(self.widget.__module__)
             else:
-                obj = d.widget.__class__
-            d.source = inspect.getsource(obj)
+                obj = self.widget.__class__
+            self.source = inspect.getsource(obj)
         html_args = {'full': True}
-        if d.title:
-            html_args['title'] = d.title
-        d.code = highlight(d.source, PythonLexer(), HtmlFormatter(**html_args))
+        if self.title:
+            html_args['title'] = self.title
+        self.code = highlight(self.source, PythonLexer(), HtmlFormatter(**html_args))
 
-code_widget = SourceCodeWidget('code_widget')
+code_widget = SourceCodeWidget(id='code_widget')

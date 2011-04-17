@@ -112,15 +112,24 @@ def install_hacks():
     """ Install dependencies with weird workarounds. """
 
     # TODO -- why is this installation of 'Extremes' a hack?
-    run('pip -q install Extremes')
+    run('pip -q install --use-mirrors Extremes')
 
     # TODO -- TBD -- does this still belong in install_hacks?
-    run('pip -q install tg.devtools')
+    run('pip -q install --use-mirrors tg.devtools')
 
     # Here we install Orbited ourselves (instead of through `python setup.py
     # develop`) because we need to specify --use-mirrors since orbited's website
     # is often down and breaks the build process.
     run('pip -q install --use-mirrors orbited')
+
+    # Same thing here with pycrypto.
+    # TODO -- TBD -- is there a way to python setup.py --user-mirrors develop ?
+    run('pip -q install --use-mirrors pycrypto')
+
+    # Sigh -- same thing here with repoze (down today)
+    # TODO -- TBD -- is there a way to python setup.py --user-mirrors develop ?
+    repoze_packages = 'repoze.who.plugins.sa repoze.what.plugins.sql'
+    run('pip -q install --use-mirrors %s' % repoze_packages)
 
 @_reporter
 @_with_virtualenv
@@ -211,6 +220,7 @@ def stop(service=None):
 @_in_srcdir
 def develop():
     """ `python setup.py develop` """
+    run('python setup.py install')
     run('python setup.py develop')
 
 @_reporter

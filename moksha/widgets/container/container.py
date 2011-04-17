@@ -16,109 +16,113 @@
 # Authors: Luke Macken <lmacken@redhat.com>
 
 import uuid
-from tw.api import Widget, JSLink, CSSLink, js_callback
-from tw.jquery import jquery_js, jQuery
+import tw2.core as twc
+from tw2.core.resources import encoder
+from tw2.jquery import jquery_js
+from tw2.jquery.base import jQuery
+from tw2.jqplugins.ui.base import jquery_ui_js
 
-import tw2.core
-
-from moksha.api.widgets.live import LiveWidget, TW2LiveWidget
+from moksha.api.widgets.live import LiveWidget
 from moksha.api.widgets.live import subscribe_topics, unsubscribe_topics
 
-container_js = JSLink(filename='static/js/mbContainer.min.js',
-                      javascript=[jquery_js],
-                      modname=__name__)
-container_css = CSSLink(filename='static/css/mbContainer.css', modname=__name__)
+container_js = twc.JSLink(filename='static/js/mbContainer.min.js',
+                          modname=__name__)
+container_css = twc.CSSLink(filename='static/css/mbContainer.css',
+                            modname=__name__)
+container_resources = twc.DirLink(filename='static/css/elements',
+                                  modname=__name__)
 
-class MokshaContainer(Widget):
+
+# TODO -- this should extend from an as yet unwritten tw2 container (nb?)
+# TODO -- should this extend from moksha/api/widgets/containers ?  duplication?
+class MokshaContainer(twc.Widget):
     template = 'mako:moksha.widgets.container.templates.container'
-    javascript = [container_js]
-    css = [container_css]
+    resources = [
+        jquery_js, jquery_ui_js, container_js, container_css,
+        container_resources,
+    ]
     options = ['draggable', 'resizable']
     button_options = ['iconize', 'minimize', 'close']
-    params = ['buttons', 'skin', 'height', 'width', 'left', 'top', 'id',
-              'title', 'icon', 'content', 'widget_name', 'view_source', 'dock',
-              'onResize', 'onClose', 'onCollapse', 'onIconize', 'onDrag',
-              'onRestore'] + options[:]
-    draggable = droppable = True
-    resizable = False
-    iconize = minimize = close = True
-    hidden = True # hide from the moksha menu
-    content = '' # either text, or a Widget instance
-    widget_name = None
-    title = 'Moksha Container'
-    skin = 'default' # default, black, white, stiky, alert
-    view_source = True
-    dock = 'moksha_dock'
-    icon = 'gears.png'
+
+    draggable = twc.Param(default=True)
+    droppable = twc.Param(default=True)
+    resizable = twc.Param(default=False)
+    iconize = twc.Param(default=True)
+    minimize = twc.Param(default=True)
+    close = twc.Param(default=True)
+    hide = twc.Param(default=True)
+
+    # TODO -- there is a better tw2 idiom for this
+    content = twc.Param("TODO == replace this with 'child'", default='')
+
+    widget_name = twc.Param(default=None)
+    title = twc.Param(default='Moksha Container')
+    skin = twc.Param(default='default') # default, black, white, stiky, alert
+    view_source = twc.Param(default=True)
+    dock = twc.Param(default='moksha_dock')
+    icon = twc.Param(default='gears.png')
 
     # Pixel tweaking
-    width = 450
-    height = 500
-    left = 170
-    top = 125
+    width = twc.Param(default=450)
+    height = twc.Param(default=500)
+    left = twc.Param(default=170)
+    top = twc.Param(default=125)
 
     # Javascript callbacks
-    onResize = js_callback("function(o){}")
-    onClose = js_callback("function(o){}")
-    onCollapse = js_callback("function(o){}")
-    onIconize = js_callback("function(o){}")
-    onDrag = js_callback("function(o){}")
-    onRestore = js_callback("function(o){}")
+    onResize = twc.Param(default=twc.JSSymbol(src="function(o){}"))
+    onClose = twc.Param(default=twc.JSSymbol(src="function(o){}"))
+    onCollapse = twc.Param(default=twc.JSSymbol(src="function(o){}"))
+    onIconize = twc.Param(default=twc.JSSymbol(src="function(o){}"))
+    onDrag = twc.Param(default=twc.JSSymbol(src="function(o){}"))
+    onRestore = twc.Param(default=twc.JSSymbol(src="function(o){}"))
+    _container_options = twc.Variable()
 
-    def update_params(self, d):
-        super(MokshaContainer, self).update_params(d)
-        if isinstance(d.content, tw2.core.widgets.WidgetMeta):
-            d.content = d.content.req()
+    def prepare(self):
+        super(MokshaContainer, self).prepare()
+        if isinstance(self.content, twc.widgets.WidgetMeta):
+            self.content = self.content.req()
 
-        if (isinstance(d.content, Widget) or
-            isinstance(d.content, tw2.core.Widget)):
+        if isinstance(self.content, twc.Widget):
+            self.widget_name = self.content.__class__.__name__
+            content_args = getattr(self, 'content_args', {})
 
-            d.widget_name = d.content.__class__.__name__
-            content_args = getattr(d, 'content_args', {})
-
-            if isinstance(d.content, LiveWidget):
-                topics = d.content.get_topics()
+            if isinstance(self.content, LiveWidget):
+                topics = self.content.get_topics()
                 # FIXME: also unregister the moksha callback functions.  Handle
                 # cases where multiple widgets are listening to the same topics
-                d.onClose = js_callback("function(o){%s $(o).remove();}" %
-                        unsubscribe_topics(topics))
-                d.onIconize = d.onCollapse = js_callback("function(o){%s}" %
-                        unsubscribe_topics(topics))
-                d.onRestore = js_callback("function(o){%s}" %
-                        subscribe_topics(topics))
-            elif isinstance(d.content, TW2LiveWidget):
-                topics = d.content.get_topics()
-                # FIXME: also unregister the moksha callback functions.  Handle
-                # cases where multiple widgets are listening to the same topics
-                d.onClose = js_callback("function(o){%s $(o).remove();}" %
-                        unsubscribe_topics(topics))
-                d.onIconize = d.onCollapse = js_callback("function(o){%s}" %
-                        unsubscribe_topics(topics))
-                d.onRestore = js_callback("function(o){%s}" %
-                        subscribe_topics(topics))
+                self.onClose = twc.JSSymbol(src="function(o){%s $(o).remove();}" %
+                                               unsubscribe_topics(topics))
+                self.onIconize = self.onCollapse = twc.JSSymbol(src="function(o){%s}" %
+                                                                   unsubscribe_topics(topics))
+                self.onRestore = twc.JSSymbol(src="function(o){%s}" %
+                                                 subscribe_topics(topics))
 
-            d.content = d.content.display(**content_args)
+            self.content = self.content.display(**content_args)
 
         for option in self.options:
-            d[option] = d.get(option, True) and option or ''
+            # TODO -- inspect this.  It might have become wonky in tw1->tw2
+            setattr(self, option, getattr(self, option, True) and option or '')
 
-        d.buttons = ''
+        self.buttons = ''
         for button in self.button_options:
-            if d.get(button, True):
-                d.buttons += '%s,' % button[:1]
-        d.buttons = d.buttons[:-1]
+            if getattr(self, button, True):
+                self.buttons += '%s,' % button[:1]
 
-        d.id = str(uuid.uuid4())
+        self.buttons = self.buttons[:-1]
 
-        self.add_call(jQuery('#%s' % d.id).buildContainers({
-            'elementsPath': '/toscawidgets/resources/moksha.widgets.container.container/static/css/elements/',
-            'onClose': d.onClose,
-            'onResize': d.onResize,
-            'onCollapse': d.onCollapse,
-            'onIconize': d.onIconize,
-            'onDrag': d.onDrag,
-            'onRestore': d.onRestore,
-            }))
+        self.id = str(uuid.uuid4())
+
+        self._container_options = encoder.encode(
+            {
+                'elementsPath': '/resources/moksha.widgets.container.container/static/css/elements/',
+                'onClose': self.onClose,
+                'onResize': self.onResize,
+                'onCollapse': self.onCollapse,
+                'onIconize': self.onIconize,
+                'onDrag': self.onDrag,
+                'onRestore': self.onRestore,
+            }
+        )
 
 
-container = MokshaContainer('moksha_container')
+container = MokshaContainer(id='moksha_container')

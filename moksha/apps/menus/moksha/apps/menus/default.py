@@ -28,7 +28,8 @@ from moksha.apps.menus import MokshaMenu, MokshaContextualMenu
 
 class MokshaContextMenu(MokshaContextualMenu):
 
-    def default(self, *args, **kw):
+    @classmethod
+    def default(cls, *args, **kw):
         return """
             <a rel="text">
                 <img src="/images/moksha-icon.png" style="position:absolute;margin-top:-20px; margin-left:-25px;margin-bottom:10px"/><br/>
@@ -42,7 +43,8 @@ class MokshaContextMenu(MokshaContextualMenu):
 class MokshaDefaultMenu(MokshaMenu):
     menus = ['Moksha', 'Widgets', 'Fedora']
 
-    def widgets(self, *args, **kw):
+    @classmethod
+    def widgets(cls, *args, **kw):
         menu = """
         <a rel="text">
             <img src="/images/block.png" style="position:absolute;margin-top:-20px; margin-left:-25px;margin-bottom:10px"/>
@@ -66,7 +68,8 @@ class MokshaDefaultMenu(MokshaMenu):
                 """ % {'name': widget['name'], 'id': id, 'live': widget['live']}
         return menu
 
-    def moksha(self, *args, **kw):
+    @classmethod
+    def moksha(cls, *args, **kw):
         return """
         <a rel="text">
             <img src="/images/moksha-icon.png" style="position:absolute;margin-top:-20px; margin-left:-25px;margin-bottom:10px"/><br>
@@ -79,7 +82,8 @@ class MokshaDefaultMenu(MokshaMenu):
         <a href="https://fedorahosted.org/moksha/">Wiki</a>
         """
 
-    def fedora(self, *args, **kw):
+    @classmethod
+    def fedora(cls, *args, **kw):
         links = {
                 'Wiki': 'http://fedoraproject.org/wiki',
                 'Hosted': 'http://fedorahosted.org',

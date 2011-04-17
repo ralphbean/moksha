@@ -13,15 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tw.api import Widget
+import tw2.core as twc
 from pylons import tmpl_context
 
-class ContextAwareWidget(Widget):
+class ContextAwareWidget(twc.Widget):
     '''Inherit from this widget class if you want your widget
        to automatically get the pylons.tmpl_context in its dictionary
     '''
+    tmpl_context = twc.Variable()
 
-    def update_params(self, d):
-        super(ContextAwareWidget, self).update_params(d)
-
-        d['tmpl_context'] = tmpl_context
+    def prepare(self):
+        super(ContextAwareWidget, self).prepare()
+        self.tmpl_context = tmpl_context

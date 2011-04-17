@@ -1,13 +1,14 @@
-<div id="${id}" class="moksha-feedreader">
+<%namespace name="tw" module="tw2.core.mako_util"/>
+<div ${tw.attrs(attrs=w.attrs)}>
   <script>
-    moksha_feed_topic = '${topic}';
+    moksha_feed_topic = '${w.topic[0]}';
   </script>
   <div id="LeftPane">
-    ${c.feed_tree()}
+    ${w.feed_tree.display() | n}
   </div>
   <div id="RightPane">
     <div id="TopPane">
-      ${c.feed_entries_tree()}
+      ${w.feed_entries_tree.display() | n}
     </div>
     <div id="BottomPane"></div>
   </div>

@@ -1,17 +1,14 @@
-from tw.api import JSLink, CSSLink, Widget
-from tw.jquery import jquery_js
+import tw2.core as twc
+from tw2.jquery import jquery_js
 
-jquery_jgrowl_js = JSLink('jquery_jgrowl_js',
-                          filename='static/jquery.jgrowl.js',
-                          javascript=[jquery_js],
-                          modname=__name__)
-jquery_jgrowl_css = CSSLink('jquery_jgrowl_css', 
-                            filename='static/jquery.jgrowl.css',
-                            modname=__name__)
+jquery_jgrowl_js = twc.JSLink(
+    filename='static/jquery.jgrowl.js',
+    modname=__name__)
+jquery_jgrowl_css = twc.CSSLink(
+    filename='static/jquery.jgrowl.css',
+    modname=__name__)
 
+class MokshaNotificationWidget(twc.Widget):
+    resources = [jquery_js, jquery_jgrowl_js, jquery_jgrowl_css]
 
-class MokshaNotificationWidget(Widget):
-    javascript = [jquery_jgrowl_js]
-    css = [jquery_jgrowl_css]
-
-moksha_notify = MokshaNotificationWidget('moksha_notify')
+moksha_notify = MokshaNotificationWidget(id='moksha_notify')

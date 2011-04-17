@@ -13,34 +13,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tw.jquery.ui_tabs import JQueryUITabs, jquery_ui_tabs_js
-from tw.jquery.ui import ui_widget_js
-from tw.api import Widget, JSLink, js_function
-from tw.forms import FormField
+import tw2.core as twc
+import tw2.forms.widgets as twf
+from tw2.jquery import jquery_js
+from tw2.jqplugins.ui.base import jquery_ui_js
+
 from pylons import config, request
 from repoze.what import predicates
 from moksha.lib.helpers import eval_app_config, ConfigWrapper, when_ready
 
-moksha_ui_tabs_js = JSLink(modname='moksha', filename='public/javascript/ui/moksha.ui.tabs.js', javascript=[jquery_ui_tabs_js, ui_widget_js])
+moksha_ui_tabs_js = twc.JSLink(
+    modname='moksha', filename='public/javascript/ui/moksha.ui.tabs.js')
 
 import urllib
 
-class TabbedContainerTabs(Widget):
+class TabbedContainerTabs(twc.Widget):
     template = 'mako:moksha.api.widgets.containers.templates.tabbedcontainer_tabs'
 
-class TabbedContainerPanes(Widget):
+class TabbedContainerPanes(twc.Widget):
     template = 'mako:moksha.api.widgets.containers.templates.tabbedcontainer_panes'
 
-tabwidget = TabbedContainerTabs('tabs')
-panewidget = TabbedContainerPanes('panes')
+tabwidget = TabbedContainerTabs(id='tabs')
+panewidget = TabbedContainerPanes(id='panes')
 
-jQuery = js_function('jQuery')
+jQuery = twc.js_function('jQuery')
 
 """
 :Name: TabbedContainer
 :Type: Container
 """
-class TabbedContainer(FormField):
+class TabbedContainer(twf.FormField):
     """
     :tabs: An ordered list of application tabs to display
            Application descriptors come from the config wrappers in
@@ -60,27 +62,24 @@ class TabbedContainer(FormField):
                FIXME: Write a tutorial and provide helper widgets so
                creating a template becomes really easy.
     """
-    css=[] # remove the default css
     template = 'mako:moksha.api.widgets.containers.templates.tabbedcontainer'
     config_key = None # if set load config
     tabs = ()
-    javascript = [moksha_ui_tabs_js
-                 ]
-    params = ["tabdefault", "staticLoadOnClick"]
+    resources = [jquery_js, jquery_ui_js, moksha_ui_tabs_js]
     tabdefault__doc="0-based index of the tab to be selected on page load"
     tabdefault=0
     staticLoadOnClick=False
 #    include_dynamic_js_calls = True #????
-    def update_params(self, d):
-        super(TabbedContainer, self).update_params(d)
-        if not getattr(d,"id",None):
+    def prepare(self):
+        super(TabbedContainer, self).prepare()
+        if not getattr(self,"id",None):
             raise ValueError, "JQueryUITabs is supposed to have id"
 
         o = {
-             'tabdefault': d.get('tabdefault', 0),
-             'staticLoadOnClick': d.get('staticLoadOnClick', False)
-            }
-        self.add_call(when_ready(jQuery("#%s" % d.id).mokshatabs(o)))
+            'tabdefault': getattr(self, 'tabdefault', 0),
+            'staticLoadOnClick': getattr(self, 'staticLoadOnClick', False)
+        }
+        self.add_call(when_ready(jQuery("#%s" % self.id).mokshatabs(o)))
 
         tabs = eval_app_config(config.get(self.config_key, "None"))
         if not tabs:
@@ -93,7 +92,7 @@ class TabbedContainer(FormField):
         # not allowed to run with the current session's authorization level
         tabs = ConfigWrapper.process_wrappers(tabs, d)
 
-        d['tabs'] = tabs
-        d['tabwidget'] = tabwidget
-        d['panewidget'] = panewidget
-        d['root_id'] = d['id']
+        self.tabs = tabs
+        self.tabwidget = tabwidget
+        self.panewidget = panewidget
+        self.root_id = self.id 

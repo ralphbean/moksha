@@ -25,8 +25,11 @@ project::
 .. moduleauthor:: Luke Macken <lmacken@redhat.com>
 """
 
-from tw.api import CSSLink, Link
+import tw2.core as twc
 
-buttons_css = CSSLink(filename='static/buttons.css',
-                      media='all', modname=__name__)
-static_images = Link(filename='static/images/ventitre.gif', modname=__name__)
+buttons_css = twc.CSSLink(filename='static/buttons.css',
+                          media='all', modname=__name__)
+buttons_dir = twc.DirLink(filename='static/images',
+                          modname=__name__)
+static_images = twc.Link(filename='static/images/ventitre.gif',
+                         modname=__name__)

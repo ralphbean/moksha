@@ -15,18 +15,19 @@
 #
 # Authors: Luke Macken <lmacken@redhat.com>
 
-from tw.jquery.flot import flot_js, excanvas_js, flot_css
+from tw2.jqplugins.flot import FlotWidget
 from moksha.api.widgets import LiveWidget
 
-class LiveFlotWidget(LiveWidget):
+class LiveFlotWidget(LiveWidget, FlotWidget):
     """ A live graphing widget """
     topic = None
-    params = ['id', 'data', 'options', 'height', 'width', 'onmessage']
     onmessage = '$.plot($("#${id}"),json[0]["data"],json[0]["options"])'
-    template = '<div id="${id}" style="width:${width};height:${height};" />'
-    javascript = [flot_js, excanvas_js]
-    css = [flot_css]
     height = '250px'
     width = '390px'
-    options = {}
-    data = [{}]
+
+    def prepare(self):
+        # IMHO this constitutes a bug in tw2.core upstream.
+        # Widgets should automatically gather and combine the resources of their
+        # parent widget classes.  You have to do it manually, which sucks.
+        self.resources += LiveWidget.resources + FlotWidget.resources
+        super(LiveFlotWidget, self).prepare()

@@ -26,12 +26,14 @@ Moksha's memory and CPU usage.
 """
 
 from uuid import uuid4
-from tw.jquery.ui import ui_progressbar_js
-from tw.jquery.flot import flot_js, excanvas_js, flot_css
+
+from tw2.jqplugins.flot.base import flot_js
+from tw2.jqplugins.ui.base import jquery_ui_js
+from tw2.excanvas import excanvas_js
 
 from moksha.api.widgets.flot import LiveFlotWidget
-from moksha.api.widgets.tw2.jit import LiveAreaChartWidget
-from moksha.api.widgets.buttons import buttons_css
+from moksha.api.widgets.jit import LiveAreaChartWidget
+from moksha.api.widgets.buttons import buttons_css, buttons_dir
 from moksha.widgets.jquery_ui_theme import ui_base_css
 
 import tw2.core.resources as res
@@ -75,6 +77,7 @@ class MokshaCPUUsageWidget(LiveFlotWidget):
             }
 
 
+# TODO -- this extending from LiveFlotWidget doesn't make sense.
 class MokshaMessageMetricsWidget(LiveFlotWidget):
     """ A Moksha Message Benchmarking Widget.
 
@@ -87,62 +90,7 @@ class MokshaMessageMetricsWidget(LiveFlotWidget):
     - display the latency
     """
     name = 'Message Metrics'
-    template = """
-        Messages sent: <span id="metrics_msg_sent">0</span><br/>
-        <div id="metrics_sent_progress"></div>
-        Messages received: <span id="metrics_msg_recv">0</span><br/>
-        <div id="metrics_recv_progress"></div>
-        <br/>
-        <script>
-            var NUM_MESSAGES = 100;
-            var accum = 0.0;
-            var flot_data = [];
-            var x = 0;
-            var start_time = 0;
-
-            $('#metrics_sent_progress').progressbar({value: 0});
-            $('#metrics_recv_progress').progressbar({value: 0});
-
-            function run_message_metrics() {
-                $('#metrics_sent_progress').progressbar('option', 'value', 0);
-                $('#metrics_recv_progress').progressbar('option', 'value', 0);
-                $('#metrics_msg_sent').text("0");
-                $('#metrics_msg_recv').text("0");
-
-                flot_data = [];
-                x = 0;
-                accum = 0.0;
-
-                for (var i = 0; i < NUM_MESSAGES; i++) {
-                    var start = new Date();
-                    start_time = start.getTime();
-                    /* Eventually, once our AMQP bindings don't explode, send
-                       the messages directly to the AMQP queue, instead of going
-                       through a consumer.  it would be nice to benchmark both.
-                    moksha.send_message('${topic}', start.getTime() + '');
-                       */
-                    moksha.send_message('moksha_message_metrics', {
-                            data: start.getTime() + '',
-                            topic: '${topic}'
-                    });
-                    $('#metrics_sent_progress').progressbar('option', 'value', i+1)
-                    $('#metrics_msg_sent').text(i + 1 + '');
-                }
-                moksha.send_message('moksha_message_metrics', {
-                        data: 'done',
-                        topic: '${topic}'
-                });
-            }
-
-        </script>
-        <div id="metrics_flot" style="width:390px;height:250px;" />
-        <div id="metrics_avg"></div>
-        <div id="metrics_msg_sec"></div>
-        <br/>
-        <center>
-          <a href="#" class="opaquebutton" onclick="run_message_metrics(); return false"><span>Send 100 Messages</span></a>
-        </center>
-    """
+    template = "mako:moksha.apps.metrics.widgets.templates.metrics"
     onmessage = """
         if (json == 'done') {
             avg = accum / (NUM_MESSAGES * 1.0);
@@ -162,11 +110,11 @@ class MokshaMessageMetricsWidget(LiveFlotWidget):
             x = x + 1;
         }
     """
-    javascript = [excanvas_js, flot_js, ui_progressbar_js]
-    css = [ui_base_css, flot_css, buttons_css]
+    resources = [excanvas_js, flot_js, jquery_ui_js,
+                 ui_base_css, buttons_css, buttons_dir]
     container_options = {'icon': 'chart.png', 'left': 550, 'top': 80,
                          'height': 500}
 
-    def update_params(self, d):
-        d.topic = str(uuid4())
-        super(MokshaMessageMetricsWidget, self).update_params(d)
+    def prepare(self):
+        self.topic = str(uuid4())
+        super(MokshaMessageMetricsWidget, self).prepare()

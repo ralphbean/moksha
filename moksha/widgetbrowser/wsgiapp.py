@@ -7,8 +7,7 @@ from pkg_resources import resource_filename
 from genshi.core import Markup
 from genshi.template import TemplateLoader, Context
 from webob import Request, Response, exc
-import tw
-from tw.api import Widget, WidgetType, make_middleware
+import tw2.core as twc
 from moksha.widgetbrowser import util, widgets, repl
 
 try:
@@ -67,7 +66,7 @@ class WidgetBrowser(object):
             self.built_docs = dest_dir
             self.app = Cascade([self.docs_app, self.app])
         if asbool(full_stack):
-            self.app = make_middleware(self.app, {
+            self.app = twc.make_middleware(self.app, {
                 'toscawidgets.framework.default_view': 'genshi',
                 }, stack_registry = True)
         self._default_controllers = dict(demo=self.show_demo,
@@ -157,7 +156,7 @@ class WidgetBrowser(object):
                 return resp(environ, start_response)
                 
             # If it's a widget class instantiate it with no arguments 
-            if isinstance(widget, WidgetType):
+            if isinstance(widget, twc.WidgetMeta):
                 widget = widget('test_widget')
             req.widget = widget
 
