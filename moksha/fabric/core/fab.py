@@ -62,7 +62,7 @@ def bootstrap():
         reqs = [
             'python-setuptools', 'python-qpid', 'qpid-cpp-server',
             'orbited', 'multitail', 'python-pip', 'python-virtualenv',
-            'gcc',
+            'gcc', 'openssl-devel'
         ]
 
         sudo('yum install -q -y ' + ' '.join(reqs) )
