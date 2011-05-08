@@ -148,7 +148,9 @@ def install_apps():
 @_with_virtualenv
 def install_app(app):
     """ Install a particular app.  $ fab install_app:metrics """
-    with cd("/".join([SRC_DIR, APPS_DIR, app])):
+    app_location = "/".join([SRC_DIR, APPS_DIR, app])
+    print "Jumping to", app_location
+    with cd(app_location):
         out = run('ls')
         if not 'pavement.py' in out.split():
             print "No `pavement.py` found for app '%s'.  Skipping." % app
