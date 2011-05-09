@@ -375,7 +375,9 @@ class MokshaMiddleware(object):
             # `init_model` method,and bind the engine to it's `metadata`.
             if app.get('model'):
                 if not sa_url:
-                    self.engines[name] = create_engine(app_db % name)
+                    if '%s' in app_db:
+                        app_db = app_db % name
+                    self.engines[name] = create_engine(app_db)
                 log.debug('Creating database engine for %s' % app['name'])
                 app['model'].init_model(self.engines[name])
                 app['model'].metadata.create_all(bind=self.engines[name])
