@@ -259,7 +259,7 @@ def _wtffail(msg):
 
 @_in_srcdir
 @_warn_only
-def wtf():
+def wtf(ignore_paster=False):
     """ Debug a busted moksha environment. """
     wtfwin, wtffail = _wtfwin, _wtffail
 
@@ -280,10 +280,10 @@ def wtf():
         wtffail('system-wide python-qpid not installed.')
 
     # Proceed along the rest of the way, but with the virtualenv enabled.
-    _wtf_rest()
+    _wtf_rest(ignore_paster)
 
 @_with_virtualenv
-def _wtf_rest():
+def _wtf_rest(ignore_paster):
     wtfwin, wtffail = _wtfwin, _wtffail
 
     out = run('python -c "import qpid"')
@@ -294,6 +294,9 @@ def _wtf_rest():
 
     for pid_file in pid_files:
         prog = pid_file[:-4]
+
+        if prog == 'paster' and ignore_paster:
+            continue
 
         pid = None
         if _file_exists(pid_file):
