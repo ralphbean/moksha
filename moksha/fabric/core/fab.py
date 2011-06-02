@@ -252,10 +252,10 @@ def logs():
 # --
 
 def _wtfwin(msg):
-    print "[wtf] [  " + c.green('OK') + "  ]", msg
+    print "[moksha-wtf] [  " + c.green('OK') + "  ]", msg
 
 def _wtffail(msg):
-    print "[wtf] [ " + c.red('FAIL') + " ]", msg
+    print "[moksha-wtf] [ " + c.red('FAIL') + " ]", msg
 
 @_in_srcdir
 @_warn_only
