@@ -53,6 +53,7 @@ setup(
         "tw2.core",
         "tw2.forms",
         "tw2.jit",
+        "virtualenvcontext",
         #"repoze.squeeze", # Not hard requirements
         #"repoze.profile", # Not hard requirements
     ],
