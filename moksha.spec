@@ -51,6 +51,7 @@ Requires: python-BeautifulSoup
 Requires: python-twisted
 Requires: python-stomper
 Requires: python-daemon
+Requires: python-psutil
 
 %description
 Moksha is a platform for creating real-time collaborative web applications.  It 
@@ -185,6 +186,9 @@ fi
 %doc docs/_build/html
 
 %changelog
+* Wed Jun 08 2011 Luke Macken <lmacken@redhat.com> - 0.5.0-5
+- Require python-psutil for the new ctl branch
+
 * Wed Dec 15 2010 Luke Macken <lmacken@redhat.com> - 0.5.0-4
 - Add a logrotate configuration
 
